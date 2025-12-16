@@ -1,93 +1,68 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/meal.dart';
 import '../models/category.dart';
-import '../services/api_service.dart';
 
-class MealProvider with ChangeNotifier {
-  List<Meal> _meals = [];
-  List<Meal> _favorites = [];
-  List<MealCategory> _categories = [];
-  bool _isLoading = false;
-  String _searchQuery = '';
+class ApiService {
+  static const String _baseUrl = 'https://www.themealdb.com/api/json/v1/1';
 
-  List<Meal> get meals => _meals;
-  List<Meal> get favorites => _favorites;
-  List<MealCategory> get categories => _categories;
-  bool get isLoading => _isLoading;
-  String get searchQuery => _searchQuery;
+  // Random Meal
+  static Future<Meal> getRandomMeal() async {
+    final url = Uri.parse('$_baseUrl/random.php');
+    final response = await http.get(url);
 
-  // TAMBAHKAN METHOD INI
-  Future<Meal?> loadRandomMeal() async {
-    try {
-      return await ApiService.getRandomMeal();
-    } catch (e) {
-      print('Error loading random meal: $e');
-      return null;
-    }
-  }
-
-  Future<void> loadCategories() async {
-    _isLoading = true;
-    notifyListeners();
-    
-    try {
-      _categories = await ApiService.getCategories();
-    } catch (e) {
-      print('Error loading categories: $e');
-    }
-    
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  Future<void> loadMealsByCategory(String category) async {
-    _isLoading = true;
-    notifyListeners();
-    
-    try {
-      _meals = await ApiService.getMealsByCategory(category);
-    } catch (e) {
-      print('Error loading meals: $e');
-    }
-    
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  Future<void> searchMeals(String query) async {
-    _searchQuery = query;
-    _isLoading = true;
-    notifyListeners();
-    
-    try {
-      _meals = await ApiService.searchMeals(query);
-    } catch (e) {
-      print('Error searching meals: $e');
-    }
-    
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  void toggleFavorite(Meal meal) {
-    final index = _favorites.indexWhere((m) => m.id == meal.id);
-    
-    if (index >= 0) {
-      _favorites.removeAt(index);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final mealJson = data['meals'][0];
+      return Meal.fromMap(mealJson);
     } else {
-      _favorites.add(meal);
+      throw Exception('Failed to load random meal');
     }
-    
-    notifyListeners();
   }
 
-  bool isFavorite(String mealId) {
-    return _favorites.any((meal) => meal.id == mealId);
+  // Ambil semua kategori
+  static Future<List<MealCategory>> getCategories() async {
+    final url = Uri.parse('$_baseUrl/categories.php');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['categories'] as List)
+          .map((json) => MealCategory.fromMap(json))
+          .toList();
+    } else {
+      throw Exception('Failed to load categories');
+    }
   }
 
-  void clearSearch() {
-    _searchQuery = '';
-    _meals = [];
-    notifyListeners();
+  // Meals by category
+  static Future<List<Meal>> getMealsByCategory(String category) async {
+    final url = Uri.parse('$_baseUrl/filter.php?c=$category');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['meals'] as List)
+          .map((json) => Meal.fromMap(json))
+          .toList();
+    } else {
+      throw Exception('Failed to load meals by category');
+    }
+  }
+
+  // Search meals
+  static Future<List<Meal>> searchMeals(String query) async {
+    final url = Uri.parse('$_baseUrl/search.php?s=$query');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['meals'] == null) return [];
+      return (data['meals'] as List)
+          .map((json) => Meal.fromMap(json))
+          .toList();
+    } else {
+      throw Exception('Failed to search meals');
+    }
   }
 }

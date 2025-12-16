@@ -27,13 +27,15 @@ class MealCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // supaya column tidak memaksa tinggi maksimum
           children: [
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(15)),
                   child: Image.network(
-                    meal.imageUrl,
+                    meal.image,
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -69,6 +71,7 @@ class MealCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     meal.name,
@@ -86,19 +89,26 @@ class MealCard extends StatelessWidget {
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (meal.tags.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: Wrap(
-                        spacing: 4,
-                        children: meal.tags
-                            .take(3)
-                            .map((tag) => Chip(
-                                  label: Text(tag),
-                                  backgroundColor: Colors.blue[50],
-                                ))
-                            .toList(),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: meal.tags
+                              .take(3)
+                              .map((tag) => Padding(
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: Chip(
+                                      label: Text(tag),
+                                      backgroundColor: Colors.blue[50],
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
                       ),
                     ),
                 ],

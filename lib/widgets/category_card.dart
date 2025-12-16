@@ -26,7 +26,7 @@ class CategoryCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
               child: Image.network(
-                category.thumbnail,
+                category.image,
                 height: 120,
                 width: double.infinity,
                 fit: BoxFit.cover,

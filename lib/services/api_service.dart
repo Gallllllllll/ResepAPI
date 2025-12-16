@@ -1,136 +1,94 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/meal.dart';
-import '../models/category.dart';
+import '../models/recipe_model.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://www.themealdb.com/api/json/v1/1';
-  static const String _spoonacularBaseUrl = 'https://api.spoonacular.com/recipes';
-  static const String _spoonacularApiKey = 'YOUR_API_KEY_HERE'; // Daftar di spoonacular.com untuk API key gratis
-
-  // Get meals by category
-  static Future<List<Meal>> getMealsByCategory(String category) async {
+  // Search resep by name
+  static Future<List<Recipe>> searchRecipes(String keyword) async {
+    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/search.php?s=$keyword');
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/filter.php?c=$category'));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final meals = data['meals'] as List;
-        
-        // Get details for each meal
-        List<Meal> detailedMeals = [];
-        for (var meal in meals) {
-          final details = await getMealDetails(meal['idMeal']);
-          detailedMeals.add(details);
-        }
-        
-        return detailedMeals;
-      }
-      return [];
+      final response = await http.get(url);
+      if (response.statusCode != 200) throw Exception("Gagal load resep dari API");
+      final data = jsonDecode(response.body);
+      if (data['meals'] == null) return [];
+      return (data['meals'] as List).map((item) {
+        return Recipe(
+          id: int.tryParse(item['idMeal'] ?? '0') ?? 0,
+          title: item['strMeal'] ?? '',
+          image: item['strMealThumb'] ?? '',
+          ingredients: [
+            for (int i = 1; i <= 20; i++)
+              if (item['strIngredient$i'] != null &&
+                  item['strIngredient$i'].toString().isNotEmpty)
+                '${item['strIngredient$i']} - ${item['strMeasure$i']}'
+          ],
+          steps: item['strInstructions'] != null
+              ? item['strInstructions'].toString().split('\n')
+              : [],
+        );
+      }).toList();
     } catch (e) {
-      print('Error fetching meals: $e');
+      print("Error searchRecipes: $e");
       return [];
     }
   }
 
-  // Get meal details by ID
-  static Future<Meal> getMealDetails(String id) async {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/lookup.php?i=$id'));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final mealData = data['meals'][0];
-        return Meal.fromJson(mealData);
-      }
-      throw Exception('Failed to load meal details');
-    } catch (e) {
-      print('Error fetching meal details: $e');
-      rethrow;
-    }
-  }
+  // Search resep by category
+  static Future<List<Recipe>> searchByCategory(String category) async {
+    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/filter.php?c=$category');
 
-  // Search meals
-  static Future<List<Meal>> searchMeals(String query) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/search.php?s=$query'));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['meals'] == null) return [];
-        
-        final meals = data['meals'] as List;
-        return meals.map((meal) => Meal.fromJson(meal)).toList();
-      }
-      return [];
+      final response = await http.get(url);
+      if (response.statusCode != 200) throw Exception("Gagal load resep dari API");
+
+      final data = jsonDecode(response.body);
+      if (data['meals'] == null) return [];
+
+      // data['meals'] hanya mengandung id, title, image
+      return (data['meals'] as List).map((item) {
+        return Recipe(
+          id: int.tryParse(item['idMeal'] ?? '0') ?? 0,
+          title: item['strMeal'] ?? '',
+          image: item['strMealThumb'] ?? '',
+          ingredients: [], // kosong, karena endpoint filter.php tidak menyediakan
+          steps: [],       // kosong, karena endpoint filter.php tidak menyediakan
+        );
+      }).toList();
     } catch (e) {
-      print('Error searching meals: $e');
+      print("Error searchByCategory: $e");
       return [];
     }
   }
 
-  // Get categories
-  static Future<List<MealCategory>> getCategories() async {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/categories.php'));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final categories = data['categories'] as List;
-        return categories.map((cat) => MealCategory.fromJson(cat)).toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error fetching categories: $e');
-      return [];
-    }
-  }
+  // Optional: get detail recipe by id
+  static Future<Recipe?> getRecipeById(int id) async {
+    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/lookup.php?i=$id');
 
-  // Get random meal
-  static Future<Meal> getRandomMeal() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/random.php'));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final mealData = data['meals'][0];
-        return Meal.fromJson(mealData);
-      }
-      throw Exception('Failed to load random meal');
-    } catch (e) {
-      print('Error fetching random meal: $e');
-      rethrow;
-    }
-  }
+      final response = await http.get(url);
+      if (response.statusCode != 200) throw Exception("Gagal load resep dari API");
 
-  // Search by ingredient (using Spoonacular API)
-  static Future<List<Meal>> searchByIngredient(String ingredient) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_spoonacularBaseUrl/findByIngredients?ingredients=$ingredient&apiKey=$_spoonacularApiKey')
+      final data = jsonDecode(response.body);
+      if (data['meals'] == null) return null;
+
+      final item = data['meals'][0];
+      return Recipe(
+        id: int.tryParse(item['idMeal'] ?? '0') ?? 0,
+        title: item['strMeal'] ?? '',
+        image: item['strMealThumb'] ?? '',
+        ingredients: [
+          for (int i = 1; i <= 20; i++)
+            if (item['strIngredient$i'] != null &&
+                item['strIngredient$i'].toString().isNotEmpty)
+              '${item['strIngredient$i']} - ${item['strMeasure$i']}'
+        ],
+        steps: item['strInstructions'] != null
+            ? item['strInstructions'].toString().split('\n')
+            : [],
       );
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
-        // Convert Spoonacular format to our Meal format
-        return data.map((item) {
-          return Meal(
-            id: item['id'].toString(),
-            name: item['title'] ?? '',
-            category: '',
-            area: '',
-            instructions: '',
-            imageUrl: item['image'] ?? '',
-            ingredients: [],
-            measures: [],
-            tags: [],
-          );
-        }).toList();
-      }
-      return [];
     } catch (e) {
-      print('Error searching by ingredient: $e');
-      return [];
+      print("Error getRecipeById: $e");
+      return null;
     }
   }
 }

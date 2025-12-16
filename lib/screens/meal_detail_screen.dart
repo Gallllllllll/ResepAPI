@@ -1,83 +1,57 @@
 import 'package:flutter/material.dart';
-import '../models/meal.dart';
+import '../models/recipe_model.dart';
+import '../services/local_recipe_service.dart';
+import 'form_recipe_screen.dart';
 
 class MealDetailScreen extends StatelessWidget {
-  final Meal meal;
-
-  const MealDetailScreen({Key? key, required this.meal}) : super(key: key);
+  final Recipe recipe;
+  const MealDetailScreen({required this.recipe, super.key});
 
   @override
   Widget build(BuildContext context) {
+    bool isLocal = true; // kamu bisa tambahkan logika untuk membedakan API & lokal
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(meal.name),
-      ),
+      appBar: AppBar(title: Text(recipe.title)),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              meal.imageUrl,
-              height: 300,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Image.network(recipe.image, fit: BoxFit.cover),
+            const SizedBox(height: 12),
+            const Text('Ingredients', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ...recipe.ingredients.map((e) => Text('- $e')).toList(),
+            const SizedBox(height: 12),
+            const Text('Steps', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ...recipe.steps.map((e) => Text('- $e')).toList(),
+            if (isLocal) ...[
+              const SizedBox(height: 12),
+              Row(
                 children: [
-                  Text(
-                    meal.name,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '${meal.area} • ${meal.category}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Bahan-bahan:',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Column(
-                    children: meal.ingredients.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final ingredient = entry.value;
-                      return ListTile(
-                        leading: CircleAvatar(
-                          child: Text('${index + 1}'),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FormRecipeScreen(recipe: recipe),
                         ),
-                        title: Text(ingredient),
-                        subtitle: meal.measures[index].isNotEmpty
-                            ? Text(meal.measures[index])
-                            : null,
                       );
-                    }).toList(),
+                      Navigator.pop(context, true);
+                    },
+                    child: const Text('Edit'),
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Cara Membuat:',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await LocalRecipeService.deleteRecipe(recipe.id);
+                      Navigator.pop(context, true);
+                    },
+                    child: const Text('Hapus'),
                   ),
-                  SizedBox(height: 8),
-                  Text(meal.instructions),
                 ],
               ),
-            ),
+            ]
           ],
         ),
       ),
