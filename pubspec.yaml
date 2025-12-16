@@ -16,10 +16,11 @@ dependencies:
   cached_network_image: ^3.3.0
   shared_preferences: ^2.2.0
   flutter_staggered_grid_view: ^0.7.0
-  google_fonts: ^5.1.0
+  google_fonts: ^6.3.3
   flutter_rating_bar: ^4.0.1
   shimmer: ^3.0.0
   cupertino_icons: ^1.0.8
+  flutter_spinkit: ^5.2.2
 
 dev_dependencies:
   flutter_test:
@@ -36,3 +37,5 @@ flutter:
   #       - asset: fonts/Poppins-Regular.ttf
   #       - asset: fonts/Poppins-Bold.ttf
   #         weight: 700
+  assets:
+    - lib/assets/images/  # Pastikan folder ini ada di proyek Anda
