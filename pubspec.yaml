@@ -38,4 +38,4 @@ flutter:
   #       - asset: fonts/Poppins-Bold.ttf
   #         weight: 700
   assets:
-    - lib/assets/images/  # Pastikan folder ini ada di proyek Anda
+    - assets/logo.png

@@ -108,6 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 4),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
@@ -136,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 4,
         shadowColor: Colors.orange[700]!.withOpacity(0.3),
       ),
+
       /// Body utama HomeScreen
       body: Container(
         decoration: BoxDecoration(
@@ -147,11 +151,11 @@ class _HomeScreenState extends State<HomeScreen> {
               Colors.orange[100]!.withOpacity(0.3),
               Colors.white,
             ],
-            stops: const [0.0, 0.3, 0.6],
           ),
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
+
           /// Kolom utama berisi search bar dan daftar resep hasil pencarian
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,14 +378,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Padding(
                                   padding:
                                       const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                                  child: Row(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _infoBadge(
                                         icon: Icons.restaurant_menu,
                                         label:
                                             '${recipe.ingredients.length} Bahan',
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(height: 6),
                                       _infoBadge(
                                         icon: Icons.format_list_numbered,
                                         label: '${recipe.steps.length} Langkah',
